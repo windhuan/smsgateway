@@ -8,3 +8,6 @@ CMPP,SGIP,SMGP  三网合一SP网关
 在Server 2003 运行时请取消受限制的运行选择框如发现程序打开后 无界面并且无错误提示 请联系我获取版本
 
 联系QQ:3483305
+
+ ![image](https://raw.githubusercontent.com/windhuan/smsgateway/master/Screenshot.png)
+
