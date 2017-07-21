@@ -1,0 +1,80 @@
+﻿<UserControl x:Class="GateWayStatistics.StatisticsWindow"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             Height="225" Width="230"
+             BorderThickness="1" BorderBrush="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="25px"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Label Grid.ColumnSpan="2" Foreground="Black" Content="{Binding ConfigName}" Background="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}"/>
+        <StackPanel Grid.Row="1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Label Content="历史发送总数:"/>
+                <Label Content="{Binding SubmitTotalCount}" Grid.Column="1"/>
+            </Grid>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Label Content="当前发送总数:"/>
+                <Label Content="{Binding SubmitCurrentCount}" Grid.Column="1"/>
+            </Grid>
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Label Content="历史接收总数:"/>
+                <Label Content="{Binding DeliverTotalCount}" Grid.Column="1"/>
+            </Grid>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Label Content="当前接收总数:"/>
+                <Label Content="{Binding DeliverCurrentCount}" Grid.Column="1"/>
+            </Grid>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Label Content="历史状态报告总数:"/>
+                <Label Content="{Binding ReportTotalCount}" Grid.Column="1"/>
+            </Grid>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Label Content="当前状态报告总数:"/>
+                <Label Content="{Binding ReportCurrentCount}" Grid.Column="1"/>
+            </Grid>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Label Content="发送速度:"/>
+                <Label Content="{Binding SubmitSpeed}" ContentStringFormat="{}{0}/s" Grid.Column="1"/>
+                <Label Content="接收速度:"  Grid.Column="2"/>
+                <Label Content="{Binding DeliverSpeed}" ContentStringFormat="{}{0}/s" Grid.Column="3"/>
+            </Grid>
+            <Button x:Name="btInit" Content="初始化" HorizontalAlignment="Left" Width="60" Margin="5,0,0,0"/>
+        </StackPanel>
+    </Grid>
+</UserControl>
