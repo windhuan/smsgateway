@@ -28,12 +28,20 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>..\SMSGateWay\bin\Release\AddIns\</OutputPath>
+    <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="SMSGateWayAddIns, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Dlls\SMSGateWayAddIns.dll</HintPath>
+    </Reference>
+    <Reference Include="SMSGateWayCore, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Dlls\SMSGateWayCore.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -45,16 +53,6 @@
   <ItemGroup>
     <Compile Include="GateWayExceptionNotify.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\SMSGateWayAddIns\SMSGateWayAddIns.csproj">
-      <Project>{9d572479-af73-4a3b-80ea-a3a17ef60456}</Project>
-      <Name>SMSGateWayAddIns</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\SMSGateWayCore\SMSGateWayCore.csproj">
-      <Project>{d058f3c4-f39a-4231-a23d-96303d382a99}</Project>
-      <Name>SMSGateWayCore</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -20,7 +20,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\SMSGateWay\bin\Debug\AddIns\</OutputPath>
+    <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -28,7 +28,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>..\SMSGateWay\bin\Release\AddIns\</OutputPath>
+    <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -66,6 +66,14 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Newtonsoft.Json.7.0.1\lib\net40\Newtonsoft.Json.dll</HintPath>
     </Reference>
+    <Reference Include="SMSGateWayAddIns, Version=1.0.0.0, Culture=neutral, PublicKeyToken=6396538ef0628593, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Dlls\SMSGateWayAddIns.dll</HintPath>
+    </Reference>
+    <Reference Include="SMSGateWayCore, Version=1.0.0.0, Culture=neutral, PublicKeyToken=6396538ef0628593, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Dlls\SMSGateWayCore.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.configuration" />
@@ -86,18 +94,6 @@
     <Compile Include="IO\FileAppender.cs" />
     <Compile Include="IO\IOLock.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\SMSGateWayAddIns\SMSGateWayAddIns.csproj">
-      <Project>{9d572479-af73-4a3b-80ea-a3a17ef60456}</Project>
-      <Name>SMSGateWayAddIns</Name>
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\SMSGateWayCore\SMSGateWayCore.csproj">
-      <Project>{d058f3c4-f39a-4231-a23d-96303d382a99}</Project>
-      <Name>SMSGateWayCore</Name>
-      <Private>False</Private>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
