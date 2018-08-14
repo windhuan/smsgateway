@@ -1,4 +1,5 @@
 ﻿using SMSGateWayAddIns;
+using SMSGateWayCore.Message;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -6,28 +7,46 @@ using System.Linq;
 using System.Net;
 using System.Net.Mail;
 using System.Text;
+using System.Threading;
 using System.Timers;
 
 namespace GateWayExceptionNotify
 {
-    class GateWayExceptionNotify : SMSGateWayAddIns.ControllerAddInBase
+    internal class GateWayExceptionNotify : SMSGateWayAddIns.ControllerAddInBase
     {
-        Timer SendTimer = null;
-        SmtpClient smtpClient;
+        private Thread SendThread = null;
+        private SmtpClient smtpClient;
 
-        [ImportProperty("邮件地址")]
+        [ImportProperty("SMTP服务器")]
+        public string Server { get; set; }
+
+        [ImportProperty("端口号")]
+        public int Port { get; set; }
+
+        [ImportProperty("SSL")]
+        public bool SSL { get; set; }
+
+        [ImportProperty("发送账号")]
+        public string User { get; set; }
+
+        [ImportProperty("发送密码")]
+        public string Password { get; set; }
+
+        [ImportProperty("通知地址")]
         public string Email { get; set; }
 
-        [ImportProperty("通知间隔(分)")]
+        [ImportProperty("通知间隔(秒)")]
         public int Interval { get; set; }
 
-        object errorslock = new object();
-        List<SMSGateWayCore.Message.ErrorMessage> Errors = new List<SMSGateWayCore.Message.ErrorMessage>();
-
+        private object errorslock = new object();
+        private List<SMSGateWayCore.Message.ErrorMessage> Errors = new List<SMSGateWayCore.Message.ErrorMessage>();
 
         public GateWayExceptionNotify()
         {
-            Interval = 10;
+            Interval = 60;
+            Server = "smtp.qq.com";
+            Port = 587;
+            SSL = true;
         }
 
         public override string[] ProtocolRequired
@@ -46,53 +65,70 @@ namespace GateWayExceptionNotify
             {
                 Errors.Clear();
             }
-            SendTimer = new Timer();
-            SendTimer.Interval = Interval * 60 * 1000;
-            SendTimer.Elapsed += SendTimer_Elapsed;
-            SendTimer.Start();
+
+            SendThread = new Thread(SendThreadRun);
+            SendThread.IsBackground = true;
+            SendThread.Start();
         }
 
-        void SendTimer_Elapsed(object sender, ElapsedEventArgs e)
+        private void SendThreadRun()
         {
-            string errorlog = string.Empty;
-            lock (errorslock)
+            DateTime lastExecuteTime = DateTime.MinValue;
+            var waitTime = Interval * 1000;
+            while (true)
             {
-                if (Errors.Count == 0)
+                if ((DateTime.Now - lastExecuteTime).TotalMilliseconds > waitTime)
                 {
-                    return;
-                }
-                foreach (var log in Errors)
-                {
-                    errorlog += log.ErrorTime.ToString() + Environment.NewLine + log.Exception.ToString() + Environment.NewLine;
-                }
-                Errors.Clear();
-            }
-            smtpClient = new SmtpClient("smtp.gmail.com", 587);
-            smtpClient.EnableSsl = true;
-            smtpClient.Timeout = 20000;
-            smtpClient.UseDefaultCredentials = false;
-            smtpClient.Credentials = new NetworkCredential("smsgatewayreport@gmail.com", "User@123");
+                    lastExecuteTime = DateTime.Now;
+                    try
+                    {
+                        string errorlog = string.Empty;
+                        lock (errorslock)
+                        {
+                            if (Errors.Count == 0)
+                            {
+                                return;
+                            }
+                            foreach (var log in Errors)
+                            {
+                                errorlog += log.ErrorTime.ToString() + Environment.NewLine + log.Exception.ToString() + Environment.NewLine;
+                            }
+                            Errors.Clear();
+                        }
+                        smtpClient = new SmtpClient(Server, Port);
+                        smtpClient.EnableSsl = SSL;
+                        smtpClient.Timeout = 60000;
+                        smtpClient.UseDefaultCredentials = false;
+                        smtpClient.Credentials = new NetworkCredential(User, Password);
 
-            MailMessage mm = new MailMessage();
-            mm.From = new MailAddress("smsgatewayreport@gmail.com");
-            var emails = Email.Split(',');
-            foreach (var to in emails)
-            {
-                mm.To.Add(new MailAddress(to));
-            }
+                        MailMessage mm = new MailMessage();
+                        mm.From = new MailAddress(User);
+                        var emails = Email.Split(',');
+                        foreach (var to in emails)
+                        {
+                            mm.To.Add(new MailAddress(to));
+                        }
 
-            mm.Subject = base.ConfigName + " 网关错误报告 报告时间：" + DateTime.Now.ToString();
-            mm.BodyEncoding = UTF8Encoding.UTF8;
-            mm.Body = errorlog;
-            smtpClient.SendAsync(mm, null);
+                        mm.Subject = base.ConfigName + " 网关错误报告 报告时间：" + DateTime.Now.ToString();
+                        mm.BodyEncoding = UTF8Encoding.UTF8;
+                        mm.Body = errorlog;
+                        smtpClient.Send(mm);
+                    }
+                    catch (Exception ex)
+                    {
+                        SendMessage(new ErrorMessage(ex));
+                    }
+                }
+                Thread.Sleep(100);
+            }
         }
 
         public override void OnUnLoad()
         {
-            if (SendTimer != null)
+            if (SendThread != null)
             {
-                SendTimer.Stop();
-                SendTimer = null;
+                SendThread.Abort();
+                SendThread = null;
             }
         }
 
