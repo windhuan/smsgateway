@@ -19,8 +19,8 @@ namespace GateWayDataBase
 {
     public class GateWayDataBase : ControllerAddInBase
     {
-        Thread SendThread = null;
-        Thread UploadThread = null;
+        private Thread SendThread = null;
+        private Thread UploadThread = null;
 
         [ImportProperty("连接字符串")]
         public string ConnectStr { get; set; }
@@ -39,6 +39,7 @@ namespace GateWayDataBase
 
         [ImportProperty("是否自动创建数据库")]
         public bool AutoCreate { get; set; }
+
         public override string TypeName
         {
             get { return "通用数据库"; }
@@ -50,18 +51,18 @@ namespace GateWayDataBase
         }
 
         private static string ConfigCachePath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData) + @"\SMSGateWay\Cache\";
-     
+
         private string _StatusUpdateCahcePath;
         private object _StatusUpdateCahceLock = new object();
-        private static FileAppender _StatusUpdateCahceAppender;
+        private FileAppender _StatusUpdateCahceAppender;
 
         private string _ReportUpdateCahcePath;
         private object _ReportUpdateCahceLock = new object();
-        private static FileAppender _ReportUpdateCahceAppender;
+        private FileAppender _ReportUpdateCahceAppender;
 
         private string _DeliverUpdateCahcePath;
         private object _DeliverUpdateCahceLock = new object();
-        private static FileAppender _DeliverUpdateCahceAppender;
+        private FileAppender _DeliverUpdateCahceAppender;
 
         private bool isLoaded = false;
         private int _CurrentSendCount = 0;
@@ -81,15 +82,14 @@ namespace GateWayDataBase
         public override void OnLoad()
         {
             isLoaded = true;
-            _StatusUpdateCahcePath = ConfigCachePath + this.ConfigName + "StatusCache";
+            _StatusUpdateCahcePath = ConfigCachePath + this.ConfigName + "_StatusCache";
             _StatusUpdateCahceAppender = new FileAppender(_StatusUpdateCahcePath + ".current");
 
-            _ReportUpdateCahcePath = ConfigCachePath + this.ConfigName + "ReportCache";
+            _ReportUpdateCahcePath = ConfigCachePath + this.ConfigName + "_ReportCache";
             _ReportUpdateCahceAppender = new FileAppender(_ReportUpdateCahcePath + ".current");
 
-            _DeliverUpdateCahcePath = ConfigCachePath + this.ConfigName + "DeliverCache";
+            _DeliverUpdateCahcePath = ConfigCachePath + this.ConfigName + "_DeliverCache";
             _DeliverUpdateCahceAppender = new FileAppender(_DeliverUpdateCahcePath + ".current");
-
 
             if (!Directory.Exists(ConfigCachePath))
             {
@@ -142,8 +142,6 @@ namespace GateWayDataBase
                     continue;
                 }
                 SendThread = null;
-
-                UploadStatusData();
             }
 
             if (UploadThread != null)
@@ -154,7 +152,7 @@ namespace GateWayDataBase
                     continue;
                 }
                 UploadThread = null;
-
+                UploadStatusData();
                 UploadDeliverData();
                 UploadReportData();
             }
@@ -170,7 +168,7 @@ namespace GateWayDataBase
                     lastExecuteTime = DateTime.Now;
                     if (_CurrentSendCount < 0)
                     {
-                        throw new Exception("数据收发数量异常,暂停发送,请重新启动");
+                        _CurrentSendCount = 0;
                     }
                     try
                     {
@@ -221,6 +219,8 @@ namespace GateWayDataBase
                                         message.ServiceID = syncObject.ServiceID;
                                         //消息发送号码
                                         message.SrcTerminalID = syncObject.SrcTerminalID;
+                                        //修改短信默认编码
+                                        message.Encoding = SMSEncoding.CODING_UCS2;
                                         if (syncObject.ExpandNo != null)
                                         {
                                             message.SrcTerminalID += syncObject.ExpandNo;
@@ -240,6 +240,7 @@ namespace GateWayDataBase
                 Thread.Sleep(100);
             }
         }
+
         private void UploadThreadRun()
         {
             DateTime lastExecuteTime = DateTime.MinValue;
@@ -255,6 +256,7 @@ namespace GateWayDataBase
                 Thread.Sleep(100);
             }
         }
+
         private void UploadStatusData()
         {
             try
@@ -264,13 +266,17 @@ namespace GateWayDataBase
                     lock (_StatusUpdateCahceLock)
                     {
                         _StatusUpdateCahceAppender.Dispose();
-                        File.Move(_StatusUpdateCahceAppender.FileName, _StatusUpdateCahcePath + DateTime.Now.ToString("yyyyMMddHHmmssfff") + ".upload");
+                        File.Move(_StatusUpdateCahceAppender.FileName, _StatusUpdateCahcePath + "_" + DateTime.Now.ToString("yyyyMMddHHmmssfff") + ".upload");
                     }
                 }
 
                 DirectoryInfo dir = new DirectoryInfo(ConfigCachePath);
-                foreach (var file in dir.GetFiles(this.ConfigName + "StatusCache*.upload").OrderBy(p => p.CreationTime))
+                foreach (var file in dir.GetFiles(this.ConfigName + "*.upload").OrderBy(p => p.CreationTime))
                 {
+                    if (!file.FullName.StartsWith(_StatusUpdateCahcePath))
+                    {
+                        continue;
+                    }
                     List<SubmitSMS> updateDatas = ReadCacheFromFile<SubmitSMS>(file.FullName);
                     Dictionary<int, SubmitSMS> updateDataDic = new Dictionary<int, SubmitSMS>();
                     foreach (var data in updateDatas)
@@ -297,6 +303,7 @@ namespace GateWayDataBase
                 SendMessage(new ErrorMessage(ex));
             }
         }
+
         private void UploadReportData()
         {
             try
@@ -306,16 +313,20 @@ namespace GateWayDataBase
                     lock (_ReportUpdateCahceLock)
                     {
                         _ReportUpdateCahceAppender.Dispose();
-                        File.Move(_ReportUpdateCahceAppender.FileName, _ReportUpdateCahcePath + DateTime.Now.ToString("yyyyMMddHHmmssfff") + ".upload");
+                        File.Move(_ReportUpdateCahceAppender.FileName, _ReportUpdateCahcePath + "_" + DateTime.Now.ToString("yyyyMMddHHmmssfff") + ".upload");
                     }
                 }
 
                 DirectoryInfo dir = new DirectoryInfo(ConfigCachePath);
-                foreach (var file in dir.GetFiles(this.ConfigName + "ReportCache*.upload").OrderBy(p => p.CreationTime))
+                foreach (var file in dir.GetFiles("*.upload").OrderBy(p => p.CreationTime))
                 {
+                    if (!file.FullName.StartsWith(_ReportUpdateCahcePath))
+                    {
+                        continue;
+                    }
                     List<SubmitSMS> updateDatas = ReadCacheFromFile<SubmitSMS>(file.FullName);
                     List<SubmitSMS> updateDatas2 = new List<SubmitSMS>();
-                    foreach(var item in updateDatas)
+                    foreach (var item in updateDatas)
                     {
                         if (updateDatas2.FirstOrDefault(p => p.MsgID == item.MsgID) == null)
                         {
@@ -333,13 +344,13 @@ namespace GateWayDataBase
                     }
                     File.Delete(file.FullName);
                 }
-
             }
             catch (Exception ex)
             {
                 SendMessage(new ErrorMessage(ex));
             }
         }
+
         private void UploadDeliverData()
         {
             try
@@ -349,19 +360,31 @@ namespace GateWayDataBase
                     lock (_DeliverUpdateCahceLock)
                     {
                         _DeliverUpdateCahceAppender.Dispose();
-                        File.Move(_DeliverUpdateCahceAppender.FileName, _DeliverUpdateCahcePath + DateTime.Now.ToString("yyyyMMddHHmmssfff") + ".upload");
+                        File.Move(_DeliverUpdateCahceAppender.FileName, _DeliverUpdateCahcePath + "_" + DateTime.Now.ToString("yyyyMMddHHmmssfff") + ".upload");
                     }
                 }
 
                 DirectoryInfo dir = new DirectoryInfo(ConfigCachePath);
-                foreach (var file in dir.GetFiles(this.ConfigName + "DeliverCache*.upload").OrderBy(p => p.CreationTime))
+                foreach (var file in dir.GetFiles(this.ConfigName + "*.upload").OrderBy(p => p.CreationTime))
                 {
-                    List<DeliverSMS> updateDatas = ReadCacheFromFile<DeliverSMS>(file.FullName);
-                    using (var _Entities = DBEntities.Factory(ConnDBType, ConnectStr))
+                    if (!file.FullName.StartsWith(_DeliverUpdateCahcePath))
                     {
-                        EFBatchOperation.For(_Entities, _Entities.DeliverSMS).InsertAll(updateDatas.ToArray());
+                        continue;
                     }
-                    File.Delete(file.FullName);
+                    //避免用户回复乱码,导致数据库插入失败后,全部回复信息无法写入数据库
+                    try
+                    {
+                        List<DeliverSMS> updateDatas = ReadCacheFromFile<DeliverSMS>(file.FullName);
+                        using (var _Entities = DBEntities.Factory(ConnDBType, ConnectStr))
+                        {
+                            EFBatchOperation.For(_Entities, _Entities.DeliverSMS).InsertAll(updateDatas.ToArray());
+                        }
+                        File.Delete(file.FullName);
+                    }
+                    catch (Exception ex)
+                    {
+                        SendMessage(new ErrorMessage(ex));
+                    }
                 }
             }
             catch (Exception ex)
@@ -375,14 +398,14 @@ namespace GateWayDataBase
             try
             {
                 RecordDeliverUpdateCache(new DeliverSMS()
-                           {
-                               DeliverTime = DateTime.Now,
-                               DestTerminalID = pMessage.DestTerminalID,
-                               LinkID = pMessage.LinkID,
-                               MsgContent = pMessage.MsgContent,
-                               ServiceID = pMessage.ServiceID,
-                               SrcTerminalID = pMessage.SrcTerminalID
-                           });
+                {
+                    DeliverTime = DateTime.Now,
+                    DestTerminalID = pMessage.DestTerminalID,
+                    LinkID = pMessage.LinkID,
+                    MsgContent = pMessage.MsgContent,
+                    ServiceID = pMessage.ServiceID,
+                    SrcTerminalID = pMessage.SrcTerminalID
+                });
                 pMessage.AssignProcessResult(true);
             }
             catch (Exception ex)
@@ -396,11 +419,11 @@ namespace GateWayDataBase
             try
             {
                 RecordReportUpdateCache(new SubmitSMS()
-                   {
-                       MsgID = pMessage.MsgID.ToString(),
-                       ReportStatus = pMessage.Status,
-                       ReportTime = DateTime.Now
-                   });
+                {
+                    MsgID = pMessage.MsgID.ToString(),
+                    ReportStatus = pMessage.Status,
+                    ReportTime = DateTime.Now
+                });
                 pMessage.AssignProcessResult(true);
             }
             catch (Exception ex)
@@ -443,7 +466,6 @@ namespace GateWayDataBase
                         submitsms.SendTime = null;
                         RecordStatusUpdateCache(submitsms);
                     }
-
 
                     if (pMessage.Status == SMSGateWayCore.SubmitMessageStatus.Complete)
                     {
@@ -488,7 +510,7 @@ namespace GateWayDataBase
             }
         }
 
-        private static List<T> ReadCacheFromFile<T>(string filename)
+        private List<T> ReadCacheFromFile<T>(string filename)
         {
             string[] lines = File.ReadAllLines(filename, Encoding.UTF8);
             List<T> datas = new List<T>();
@@ -501,9 +523,9 @@ namespace GateWayDataBase
                         datas.Add(Newtonsoft.Json.JsonConvert.DeserializeObject<T>(line));
                     }
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-
+                    SendMessage(new ErrorMessage(ex));
                 }
             }
             return datas;
